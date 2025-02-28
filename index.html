@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Key Derivation Tool</title>
+    <title>Key Derivation Toolbox</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,6 +24,15 @@
             color: #ffffff;
         }
 
+        h1 a {
+            color: green;
+            text-decoration: none;
+        }
+
+        h1 a:hover {
+            color: lightgreen;
+        }
+
         .hidden {
             display: none;
         }
@@ -41,8 +50,12 @@
             display: block;
         }
         .subtitle a {
-            color: #4CAF50;
+            color: green;
             text-decoration: none;
+        }
+
+        .subtitle a:hover {
+            color: lightgreen;
         }
 
         label {
@@ -66,7 +79,7 @@
 
         input:focus {
             outline: none;
-            border-color: #4CAF50;
+            border-color: lightgrey;
             box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
         }
 
@@ -83,7 +96,7 @@
             display: block;
             margin-left: auto;
             margin-right: auto;
-            background-color: #4CAF50;
+            background-color: green;
             color: #ffffff;
         }
 
@@ -96,12 +109,6 @@
         button:enabled {
             background-color: green;
             color: white;
-        }
-
-        #resultMessage {
-            margin-top: 5%;
-            font-size: 0.9rem;
-            font-family: monospace;
         }
 
         .word-wrap {
@@ -117,14 +124,8 @@
             color: #e0e0e0;
         }
 
-        .warning-text {
-            font-size: 0.8rem;
-            color: #ff4444;
-            margin-top: 2%;
-        }
-
         .checkbox-container {
-            display: inline-flex;
+            display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: flex-start;
@@ -144,12 +145,14 @@
             font-size: 0.85rem;
             line-height: 1.2;
             text-align: left;
-            flex-grow: 1;
-            display: inline-block;
             white-space: normal;
-            width: 100%;
             margin: 0;
             color: #e0e0e0;
+            width: auto;
+        }
+
+        input[type="checkbox"]:checked {
+            accent-color: green;
         }
 
         .footer {
@@ -160,8 +163,50 @@
         }
 
         .footer a {
-            color: #4CAF50;
+            color: green;
             text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: lightgreen;
+        }
+
+        #seedExtension2InputContainerGen {
+            margin-top: 5%;
+        }
+
+        #deriveButtonGen {
+            margin-top: 5%;
+        }
+
+        #resultsDer {
+            font-size: 0.9rem;
+            font-family: monospace;
+            text-align: center;
+            white-space: pre-wrap;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #resultsGen {
+            padding: 0;
+            margin: 0;
+        }
+
+        #resultsGen label {
+            margin: 0;
+            padding: 0;
+        }
+
+        #resultsGen .word-wrap {
+            margin: 0;
+            padding: 0;
+        }
+
+        #resultsGen div {
+            margin-bottom: 1%;
         }
 
         @media screen and (min-width: 768px) {
@@ -179,7 +224,7 @@
                 display: block;
             }
 
-            #resultMessage {
+            #resultsDer {
                 max-width: 500px;
                 margin: 0 auto;
             }
@@ -209,14 +254,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const seedExtension2InputContainerGen = document.getElementById("seedExtension2InputContainerGen");
     const seedExtension2Gen = document.getElementById("seedExtension2Gen");
     const deriveButtonGen = document.getElementById("deriveButtonGen");
-    const clearButtonGen = document.getElementById("clearButtonGen");
     const resultsGen = document.getElementById("resultsGen");
+    const clearButtonGen = document.getElementById("clearButtonGen");
 
     const accountNameDer = document.getElementById("accountNameDer");
     const masterPasswordDer = document.getElementById("masterPasswordDer");
     const deriveButtonDer = document.getElementById("deriveButtonDer");
-    const clearButtonDer = document.getElementById("clearButtonDer");
     const resultsDer = document.getElementById("resultsDer");
+    const clearButtonDer = document.getElementById("clearButtonDer");
 
 
     function suggestBrainKey() {
@@ -482,38 +527,51 @@ document.addEventListener("DOMContentLoaded", () => {
     function validateDerivatorForm() {
         const accountName = accountNameDer.value.trim();
         const masterPassword = masterPasswordDer.value.trim();
+        const isAccountValid = validateAccountName(accountName);
 
-        const isValidAccountDer = validateAccountName(accountName);
+        deriveButtonDer.disabled = !(isAccountValid && masterPassword);
 
-        deriveButtonDer.disabled = !(isValidAccountDer && masterPassword);
-
-        accountNameDer.style.borderColor = isValidAccountDer ? "" : "red";
+        if (accountName) {
+            accountNameDer.style.borderColor = isAccountValid ? "" : "red";
+        } else {
+            accountNameDer.style.borderColor = "";
+        }
     }
 
     accountNameDer.addEventListener("input", validateDerivatorForm);
     masterPasswordDer.addEventListener("input", validateDerivatorForm);
 
-    deriveButtonDer.addEventListener("click", () => {
-        const accountName = accountNameDer.value.trim();
-        const masterPassword = masterPasswordDer.value.trim();
-        displayDerivatorResults(accountName, masterPassword);
+    masterPasswordDer.addEventListener("input", cleanSeedPhraseDer);
+
+    masterPasswordDer.addEventListener("blur", () => {
+        masterPasswordDer.value = masterPasswordDer.value.trim();
     });
 
     clearButtonDer.addEventListener("click", clearInputs);
 
-    function displayDerivatorResults(accountName, masterPassword) {
-        resultsDer.textContent = `
-Private Owner Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "owner").toString()}
-Public Owner Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "owner").createPublic().toString()}
+    validateDerivatorForm();
 
-Private Active Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "active").toString()}
-Public Active Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "active").createPublic().toString()}
+    deriveButtonDer.addEventListener("click", () => {
+        displayDerivatorResults();
+    });
 
-Private Posting Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "posting").toString()}
-Public Posting Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "posting").createPublic().toString()}
+    function displayDerivatorResults() {
+        const accountName = accountNameDer.value.trim();
+        const masterPassword = masterPasswordDer.value.trim();
+        resultsDer.innerHTML = `
+<br>
+<b>Private Owner Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "owner").toString()}
+<b>Public Owner Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "owner").createPublic().toString()}
 
-Private Memo Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo").toString()}
-Public Memo Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo").createPublic().toString()}
+<b>Private Active Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "active").toString()}
+<b>Public Active Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "active").createPublic().toString()}
+
+<b>Private Posting Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "posting").toString()}
+<b>Public Posting Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "posting").createPublic().toString()}
+
+<b>Private Memo Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo").toString()}
+<b>Public Memo Key:</b>${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo").createPublic().toString()}
+<br>
         `.trim();
     }
 
@@ -525,15 +583,18 @@ Public Memo Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo
         const seedExtension1 = seedExtension1Gen.value.trim();
         const useExtension2 = useSeedExtension2Gen.checked;
         const seedExtension2 = seedExtension2Gen.value.trim();
-
-        const isValidAccountGen = validateAccountName(accountName);
+        const isAccountValid = validateAccountName(accountName);
 
         const isValidSeed1 = useBrainKey || !useExtension1 || seedExtension1.length > 0;
         const isValidSeed2 = useBrainKey || !useExtension2 || (seedExtension1.length > 0 && seedExtension2.length > 0 && seedExtension1 !== seedExtension2);
 
-        deriveButtonGen.disabled = !(isValidAccountGen && bip39.wordlist.length === 2048 && isValidSeed1 && isValidSeed2);
+        deriveButtonGen.disabled = !(isAccountValid && bip39.wordlist.length === 2048 && isValidSeed1 && isValidSeed2);
 
-        accountNameGen.style.borderColor = isValidAccountGen ? "" : "red";
+        if (accountName) {
+            accountNameGen.style.borderColor = isAccountValid ? "" : "red";
+        } else {
+            accountNameGen.style.borderColor = "";
+        }
     }
 
     useBrainKeyGen.addEventListener("change", () => {
@@ -569,7 +630,7 @@ Public Memo Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo
     seedExtension1Gen.addEventListener("input", () => {
         validateGeneratorForm();
         if (seedExtension1Gen.value.trim() && useSeedExtension1Gen.checked) {
-            seedExtension2ContainerGen.style.display = "block";
+            seedExtension2ContainerGen.style.display = "flex";
         } else {
             seedExtension2ContainerGen.style.display = "none";
             useSeedExtension2Gen.checked = false;
@@ -586,6 +647,12 @@ Public Memo Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo
         validateGeneratorForm();
     });
 
+    useBrainKeyGen.addEventListener("change", () => {
+        deriveButtonGen.textContent = useBrainKeyGen.checked
+            ? "Generate Password and Derive Keys"
+            : "Generate Seed Phrase and Derive Keys";
+    });
+
     useBrainKeyGen.addEventListener("change", validateGeneratorForm);
 
     accountNameGen.addEventListener("input", validateGeneratorForm);
@@ -595,6 +662,8 @@ Public Memo Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo
     deriveButtonGen.addEventListener("click", generateAndDisplayKeys);
 
     clearButtonGen.addEventListener("click", clearInputs);
+
+    validateGeneratorForm();
 
     async function generateAndDisplayKeys() {
         const accountName = accountNameGen.value.trim();
@@ -634,7 +703,7 @@ Public Memo Key: ${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo
                 <label>Public Memo Key:</label>
                 <div class="word-wrap">${dhive.PrivateKey.fromLogin(accountName, masterPassword, "memo").createPublic().toString()}</div>
                 ${useSecondExtension ? `
-                <label>Second Seed Extension:</label>
+                <label>Alternative Seed Extension:</label>
                 <div class="word-wrap">${seedExtension2}</div>
                 <label>Second Private Owner Key:</label>
                 <div class="word-wrap">${dhive.PrivateKey.fromLogin(accountName, secondaryMasterPassword, "owner").toString()}</div>
@@ -704,6 +773,7 @@ function showPage(pageId) {
     document.getElementById(pageId).style.display = "block";
 }
 
+
         
 
     </script>
@@ -711,19 +781,25 @@ function showPage(pageId) {
 <body>
 
     <div id="mainMenu">
-        <h1>Key Derivation Tool</h1>
-        <p class="subtitle">• This tool can be used offline, just download the whole page and run it locally</p>
-        <button class="button" onclick="showPage('generatorTool')">Generate a "Master Password" and derive Hive key pairs</button>
-        <button class="button" onclick="showPage('derivatorTool')">Derive Hive key pairs from any "Master Password"</button>
-        <p class="footer">Made with ❤️ by <a href="https://peakd.com/@hassemer" target="_blank">hassemer</a></p>
-        <p class="footer">v. 1.2</p>
+        <h1>Key Derivation Toolbox</h1>
+        <p class="subtitle">• These tools can be used offline, just download the whole page (go to "Save as...") and run it locally</p>
+        <button class="button" onclick="showPage('generatorTool')">I want to generate a new "Master Password" and derive Hive keys from it</button>
+        <button class="button" onclick="showPage('derivatorTool')">I already have a "Master Password" and want to derive Hive keys from it</button>
+        <p class="footer">Made with ❤️ by <a href="https://peakd.com/@hassemer" target="_blank">@hassemer</a></p>
+        <p class="footer">v. 1.3</p>
+        <br><br>
+        <h1>My Little Hive Tools</h1>
+        <p class="subtitle"><b>Key Derivation Toolbox</b></p>
+        <p class="subtitle"><a href="https://hassemer-g.github.io/hive-owner-ops/" target="_blank">Owner Operations Toolbox</a></p>
+        <p class="subtitle"><a href="https://hassemer-g.github.io/hive-ops/" target="_blank">Non-Owner Operations Toolbox</a></p>
+        <p class="footer" style="color: red">ATTENTION: These tools are provided absolutely without guarantees; use them at your own risk.</p>
     </div>
 
     <div id="generatorTool" class="hidden">
         <h1>Key Generator Tool</h1>
-        <p class="subtitle">• This can be used to generate random BIP-39 24-word seed phrases and derive Hive key pairs from it</p>
+        <p class="subtitle">• This tool can be used to generate random BIP-39 24-word seed phrases and derive Hive key pairs from it</p>
         <p class="subtitle">• Alternatively, you can choose to use "traditional" Hive-style 52-character random passwords</p>
-        <p class="subtitle">• After using this tool and safely storing all passwords and keys, you can use my <a href="https://hassemer-g.github.io/owner-ops/" target="_blank">Owner Operations Tool</a> or my <a href="https://hassemer-g.github.io/transactions/" target="_blank">Transactions Tool</a> to change your account's keys</p>
+        <p class="subtitle">• After using this tool and safely storing all passwords and keys, you can use my <a href="https://hassemer-g.github.io/hive-owner-ops/" target="_blank">Owner Operations Toolbox</a> or my <a href="https://hassemer-g.github.io/hive-ops/" target="_blank">Non-Owner Operations Toolbox</a> to change your account's keys</p>
         <div class="form-group">
             <label for="accountNameGen">Your Hive Account:</label>
             <input type="text" id="accountNameGen" placeholder="E.g., youraccount">
@@ -739,16 +815,16 @@ function showPage(pageId) {
             </div>
         </div>
         <div class="form-group" id="seedExtension1ContainerGen" style="display: none;">
-            <label for="seedExtension1Gen">Enter your seed extension:</label>
-            <input type="text" id="seedExtension1Gen" placeholder="Enter a seed extension">
+            <label for="seedExtension1Gen">Your seed extension:</label>
+            <input type="text" id="seedExtension1Gen" placeholder="Enter your seed extension">
         </div>
         <div class="checkbox-container" id="seedExtension2ContainerGen" style="display: none;">
             <input type="checkbox" id="useSeedExtension2Gen">
-            <label for="useSeedExtension2Gen">Use a 2nd seed extension to derive a second pair of owner keys</label>
+            <label for="useSeedExtension2Gen">Derive a 2nd pair of owner keys</label>
         </div>
         <div class="form-group" id="seedExtension2InputContainerGen" style="display: none;">
-            <label for="seedExtension2Gen">Second seed extension:</label>
-            <input type="text" id="seedExtension2Gen" placeholder="Enter second seed extension">
+            <label for="seedExtension2Gen">Alternative seed extension:</label>
+            <input type="text" id="seedExtension2Gen" placeholder="Enter your alternative seed extension">
         </div>
         <div class="form-group">
             <button id="deriveButtonGen" disabled>Generate Seed Phrase and Derive Keys</button>
@@ -762,7 +838,7 @@ function showPage(pageId) {
 
     <div id="derivatorTool" class="hidden">
         <h1>Key Derivator Tool</h1>
-        <p class="subtitle">• This can be used to derive Hive key pairs from any "Master Password"</p>
+        <p class="subtitle">• This tool can be used to derive Hive key pairs from any "Master Password"</p>
         <div class="form-group">
             <label for="accountNameDer">Your Hive Account:</label>
             <input type="text" id="accountNameDer" placeholder="E.g., youraccount">
@@ -772,7 +848,7 @@ function showPage(pageId) {
             <input type="text" id="masterPasswordDer" placeholder="Your Master Password">
         </div>
         <button id="deriveButtonDer" disabled>Derive Keys</button>
-        <pre id="resultsDer"></pre>
+        <div id="resultsDer"></div>
         <div class="form-group">
             <button id="clearButtonDer">Clear All Info</button>
         </div>
