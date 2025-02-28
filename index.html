@@ -541,12 +541,6 @@ document.addEventListener("DOMContentLoaded", () => {
     accountNameDer.addEventListener("input", validateDerivatorForm);
     masterPasswordDer.addEventListener("input", validateDerivatorForm);
 
-    masterPasswordDer.addEventListener("input", cleanSeedPhraseDer);
-
-    masterPasswordDer.addEventListener("blur", () => {
-        masterPasswordDer.value = masterPasswordDer.value.trim();
-    });
-
     clearButtonDer.addEventListener("click", clearInputs);
 
     validateDerivatorForm();
@@ -772,6 +766,7 @@ function showPage(pageId) {
 
     document.getElementById(pageId).style.display = "block";
 }
+
 
 
         
